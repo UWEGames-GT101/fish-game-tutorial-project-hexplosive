@@ -4,7 +4,17 @@ from gamedata import GameData
 
 
 def isInside(sprite, mouse_x, mouse_y) -> bool:
-    pass
+    # grab the sprite's bounding box, the box has 4 vertices
+    bounds = sprite.getWorldBounds()
+    # the bounding box is the smallest rectangle that can fit around the sprite
+
+    # check if the mouse's position is within the fish bounds
+
+    if bounds.v1.x < mouse_x < bounds.v2.x and bounds.v1.y < mouse_y < bounds.v3.y:
+        return True
+
+    return False
+
 
 
 class MyASGEGame(pyasge.ASGEGame):
@@ -63,10 +73,19 @@ class MyASGEGame(pyasge.ASGEGame):
             return False
 
     def initFish(self) -> bool:
-        pass
+        if self.fish.loadTexture("/data/images/kenney_fishpack/fishTile_073.png"):
+            self.fish.z_order = 1 # sets the fish's position on the z axis to 1
+            self.fish.scale = 1 # fish on top
+            self.spawn()
+            return True
+        return False
 
     def initScoreboard(self) -> None:
-        pass
+        self.scoreboard = pyasge.Text(self.data.fonts["MainFont"]) # initialises scoreboard with mainfont
+        self.scoreboard.x = 1300
+        self.scoreboard.y = 75
+        self.scoreboard.string = str(self.data.score).zfill(6)
+
 
     def initMenu(self) -> bool:
         # menu text
@@ -100,7 +119,15 @@ class MyASGEGame(pyasge.ASGEGame):
         # returns true to state the function was successful
 
     def clickHandler(self, event: pyasge.ClickEvent) -> None:
-        pass
+        # checks if mouse1 is pressed
+        if event.action == pyasge.MOUSE.BUTTON_PRESSED and \
+            event.button == pyasge.MOUSE.MOUSE_BTN1:
+
+            # is the mouse within the sprite's bounding box
+            if isInside(self.fish, event.x, event.y):
+                self.data.score += 1 # adding 1 to the score
+                self.scoreboard.string = str(self.data.score).zfill(6)
+                self.spawn() # respawns the fish
 
     def keyHandler(self, event: pyasge.KeyEvent) -> None:
         # only act if the key is pressed and not released
@@ -123,6 +150,10 @@ class MyASGEGame(pyasge.ASGEGame):
                     # selects the exit option
                 # this doesn't care what key is pressed, it just flips between options
 
+            # randomly spawns fish
+            if event.key == pyasge.KEYS.KEY_P:
+                self.spawn()
+
             # if the enter key is pressed, select the current option
             if event.key == pyasge.KEYS.KEY_ENTER:
                 if self.menu_option == 0: # if the menu option is >Start
@@ -130,9 +161,20 @@ class MyASGEGame(pyasge.ASGEGame):
                 else:
                     self.signal_exit() # exits the program
 
+        if event.action == pyasge.KEYS.KEY_REPEATED:
+            if event.key == pyasge.KEYS.KEY_P:
+                self.spawn()
+
+
 
     def spawn(self) -> None:
-        pass
+        # generate random coordinates for the smish but don't let it spawn on edges
+        x = random.randint(0, self.data.game_res[0] - self.fish.width)
+        y = random.randint(0, self.data.game_res[1] - self.fish.height) # reduces the max height and width by the
+        # fish's dimensions - prevents it from spawning outside the window
+
+        self.fish.x = x
+        self.fish.y = y
 
     def update(self, game_time: pyasge.GameTime) -> None:
 
@@ -150,19 +192,19 @@ class MyASGEGame(pyasge.ASGEGame):
         ``frame_time`` is essential to ensure consistent performance.
         @param game_time: The tick and frame deltas.
         """
+        self.data.renderer.render(self.data.background)
 
         if self.menu:
             # render the menu here
             # telling the renderer to render the menu
-            self.data.renderer.render(self.data.background)
             self.data.renderer.render(self.menu_text)
-
             self.data.renderer.render(self.play_option)
             self.data.renderer.render(self.play_option)
             self.data.renderer.render(self.exit_option)
         else:
             # render the game here
-            pass
+            self.data.renderer.render(self.fish)
+            self.data.renderer.render(self.scoreboard)
 
 
 def main():
