@@ -20,7 +20,7 @@ class MyASGEGame(pyasge.ASGEGame):
             settings (pyasge.GameSettings): The game settings
         """
         pyasge.ASGEGame.__init__(self, settings)
-        self.renderer.setClearColour(pyasge.COLOURS.CORNFLOWER)
+        self.renderer.setClearColour(pyasge.COLOURS.BLACK)
 
         # create a game data object, we can store all shared game content here
         self.data = GameData()
@@ -55,7 +55,12 @@ class MyASGEGame(pyasge.ASGEGame):
         self.initFish()
 
     def initBackground(self) -> bool:
-        pass
+        if self.data.background.loadTexture("/data/images/background.png"):
+                # if texture loads:
+            self.data.background.z_order = -100
+            return True
+        else:
+            return False
 
     def initFish(self) -> bool:
         pass
@@ -64,13 +69,67 @@ class MyASGEGame(pyasge.ASGEGame):
         pass
 
     def initMenu(self) -> bool:
-        pass
+        # menu text
+
+        self.data.fonts["MainFont"] = self.data.renderer.loadFont("/data/fonts/KGHAPPY.ttf", 64)
+        # sets the main font to a font loaded from the data folder,
+        self.menu_text = pyasge.Text(self.data.fonts["MainFont"])
+        # creates a pyasge.Text instance for the menu text using the main font
+        self.menu_text.string = "The Fish Game"
+        # sets the string that menu_Text contains
+        self.menu_text.position = [100, 100]
+        # sets the position of the text baseline
+        self.menu_text.colour = pyasge.COLOURS.HOTPINK
+        # sets colour
+
+        # menu options
+
+        # option to start the game
+        self.play_option = pyasge.Text(self.data.fonts["MainFont"])
+        self.play_option.string = ">Start"
+        self.play_option.position = [100, 400]
+        self.play_option.colour = pyasge.COLOURS.HOTPINK
+
+        # option to exit
+        self.exit_option = pyasge.Text(self.data.fonts["MainFont"])
+        self.exit_option.string = "Exit"
+        self.exit_option.position = [500, 400]
+        self.exit_option.colour = pyasge.COLOURS.LIGHTSLATEGRAY
+
+        return True
+        # returns true to state the function was successful
 
     def clickHandler(self, event: pyasge.ClickEvent) -> None:
         pass
 
     def keyHandler(self, event: pyasge.KeyEvent) -> None:
-        pass
+        # only act if the key is pressed and not released
+        if event.action == pyasge.KEYS.KEY_PRESSED:
+            # use the left and right keys to select options
+            if event.key == pyasge.KEYS.KEY_RIGHT or event.key == pyasge.KEYS.KEY_LEFT:
+                self.menu_option = 1 - self.menu_option # flips the menu option - if it is 0, 1 is added as
+                # 1 - 0 = 1. if it is 1, 1 is subtracted.
+                if self.menu_option == 0:
+                    self.play_option.string = ">Start"
+                    self.play_option.colour = pyasge.COLOURS.HOTPINK
+                    self.exit_option.string = " Exit"
+                    self.exit_option.colour = pyasge.COLOURS.LIGHTSLATEGRAY
+                    # selects the play option
+                else:
+                    self.play_option.string = " Start"
+                    self.play_option.colour = pyasge.COLOURS.LIGHTSLATEGRAY
+                    self.exit_option.string = ">Exit"
+                    self.exit_option.colour = pyasge.COLOURS.HOTPINK
+                    # selects the exit option
+                # this doesn't care what key is pressed, it just flips between options
+
+            # if the enter key is pressed, select the current option
+            if event.key == pyasge.KEYS.KEY_ENTER:
+                if self.menu_option == 0: # if the menu option is >Start
+                    self.menu = False # exits the menu state
+                else:
+                    self.signal_exit() # exits the program
+
 
     def spawn(self) -> None:
         pass
@@ -87,14 +146,20 @@ class MyASGEGame(pyasge.ASGEGame):
     def render(self, game_time: pyasge.GameTime) -> None:
         """
         This is the variable time-step function. Use to update
-        animations and to render the gam    e-world. The use of
+        animations and to render the game-world. The use of
         ``frame_time`` is essential to ensure consistent performance.
         @param game_time: The tick and frame deltas.
         """
 
         if self.menu:
             # render the menu here
-            pass
+            # telling the renderer to render the menu
+            self.data.renderer.render(self.data.background)
+            self.data.renderer.render(self.menu_text)
+
+            self.data.renderer.render(self.play_option)
+            self.data.renderer.render(self.play_option)
+            self.data.renderer.render(self.exit_option)
         else:
             # render the game here
             pass
@@ -114,6 +179,7 @@ def main():
     settings.window_height = 900
     settings.fixed_ts = 60
     settings.fps_limit = 60
+
     settings.window_mode = pyasge.WindowMode.BORDERLESS_WINDOW
     settings.vsync = pyasge.Vsync.ADAPTIVE
     game = MyASGEGame(settings)
